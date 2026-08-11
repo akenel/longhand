@@ -12,6 +12,20 @@
   // the serif is the right default for everything in it.
   // ===========================================================
 
+  // --- comfort: the single most important setting here ------------------
+  // Scales the WHOLE interface — editor, sidebar, tabs, status bar — and
+  // re-flows the layout with it. This is the right knob. Browser zoom is
+  // the wrong one: it magnifies pixels without re-laying out, so the
+  // explorer filenames start overlapping (seen at 150% on 2026-08-11).
+  //
+  // Each step is about 1.2x:  1 = 120%   2 = 144%   3 = 173%
+  // Fractions work: 2.5 = 158%.
+  //
+  // 2 is the default because "big enough not to squint" beats "fits more
+  // on screen" for a tool you write in for hours. Nudge it live with
+  // Ctrl+= / Ctrl+- — it saves and survives a restart.
+  "window.zoomLevel": 2,
+
   // --- calm, not stark -------------------------------------------------
   "workbench.colorTheme": "Quiet Light",
 
@@ -100,6 +114,20 @@
   // your face — you're only ever editing the chapter.
   "explorer.compactFolders": false,
   "explorer.sortOrder": "type",
+
+  // Filenames here are long by design (02-the-crew-of-two.md). Give the
+  // tree room to breathe and let long names ellipsize instead of colliding.
+  "workbench.tree.indent": 14,
+  "workbench.list.smoothScrolling": true,
+  "explorer.decorations.badges": false,
+
+  // The terminal and search boxes ignore editor.fontSize and default to
+  // something small. window.zoomLevel scales them, but they start from a
+  // lower base — nudge them up so nothing in the window needs squinting.
+  "terminal.integrated.fontSize": 15,
+  "debug.console.fontSize": 15,
+  "scm.inputFontSize": 15,
+  "chat.editor.fontSize": 15,
 
   "telemetry.telemetryLevel": "off",
   "update.mode": "none",

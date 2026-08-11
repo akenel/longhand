@@ -30,9 +30,32 @@ services:
     ports:
       - "127.0.0.1:${LONGHAND_PORT:-8443}:8080"
 
+    # Seed the writing settings on FIRST run only, then hand off to
+    # code-server.
+    #
+    # `cp -n` is the whole trick: it never overwrites. So the shipped
+    # defaults land once, and after that the file belongs to you — change
+    # the zoom with Ctrl+= or edit any setting in the UI and it sticks
+    # across restarts.
+    #
+    # An earlier version bind-mounted settings.json read-only, which
+    # looked tidy and quietly made every setting in the editor
+    # unchangeable. Ctrl+= appeared to work and reverted on reload.
+    #
+    # To go back to the shipped defaults:
+    #   docker compose down && docker volume rm longhand_longhand_data
+    #
     # No password: nothing but this machine can reach the port above.
-    # The prod overlay flips this decision, not this file.
-    command: ["--auth", "none", "--disable-telemetry", "/home/coder/writing"]
+    # The prod overlay flips that decision, not this file.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /home/coder/.local/share/code-server/User
+        [ -s /home/coder/.local/share/code-server/User/settings.json ] \
+          || cp /defaults/settings.json /home/coder/.local/share/code-server/User/settings.json
+        exec /usr/bin/entrypoint.sh \
+          --bind-addr 0.0.0.0:8080 \
+          --auth none --disable-telemetry /home/coder/writing
 
     environment:
       DOCKER_USER: coder
@@ -48,15 +71,26 @@ services:
       # is the reason this line is narrow.
       - ${WRITING_DIR:-./workspace}:/home/coder/writing
 
-      # The writing environment itself: theme, serif font, 80-column
+      # The shipped DEFAULTS: theme, serif font, comfort zoom, 80-column
       # wrap, no line numbers, no autocomplete. Read config/settings.json
       # — it is the whole "distraction-free editor" feature.
-      - ./config/settings.json:/home/coder/.local/share/code-server/User/settings.json:ro
+      #
+      # Mounted at /defaults and copied in on first run, NOT mounted over
+      # the live settings file. That's what keeps the editor's own
+      # settings editable (see the command above).
+      - ./config:/defaults:ro
 
-      # Extensions and editor state survive a restart.
-      - longhand_data:/home/coder/.local/share/code-server
+      # Extensions, editor state and your LIVE settings.
+      #
+      # A host directory, not a named volume, for one reason: a named
+      # volume is created root-owned, and this container runs as you
+      # (uid 1000), so code-server couldn't write its own logs and died
+      # on EACCES. A bind mount inherits ./data's ownership, which is
+      # yours.
+      #
+      # Bonus: your live settings.json is right here on the host at
+      # ./data/User/settings.json — readable and editable without going
+      # through the container.
+      - ./data:/home/coder/.local/share/code-server
 
     mem_limit: ${LONGHAND_MEM:-1024m}
-
-volumes:
-  longhand_data:

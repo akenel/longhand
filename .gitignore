@@ -2,3 +2,4 @@
 workspace/
 *.swp
 .DS_Store
+data/
