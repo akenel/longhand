@@ -1,0 +1,62 @@
+# =============================================================
+# Longhand — the writing desk. LOCAL by default.
+#
+# This file stands up VS Code in a browser, configured as a
+# distraction-free markdown editor, on YOUR machine only. It binds to
+# 127.0.0.1 — nothing is exposed to the network, so no auth is needed
+# and nothing can reach it but you.
+#
+#   docker compose up -d    ->    http://127.0.0.1:8443
+#
+# Point it at what you're writing:
+#   echo 'WRITING_DIR=/home/angel/repos/freehold/docs/human-green/book' >> .env
+#
+# To put it on the box behind Keycloak, add the prod overlay:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Read the header of that file first — it hands a browser terminal to
+# whoever gets through the login, and that deserves a decision, not a
+# default.
+# =============================================================
+name: longhand
+
+services:
+  code-server:
+    image: ${CODE_SERVER_IMAGE:-codercom/code-server:4.104.3}
+    restart: unless-stopped
+
+    # 127.0.0.1 ONLY. Not 0.0.0.0. This is a text editor with a terminal
+    # in it; the loopback bind is the security model until the prod
+    # overlay replaces it with Keycloak.
+    ports:
+      - "127.0.0.1:${LONGHAND_PORT:-8443}:8080"
+
+    # No password: nothing but this machine can reach the port above.
+    # The prod overlay flips this decision, not this file.
+    command: ["--auth", "none", "--disable-telemetry", "/home/coder/writing"]
+
+    environment:
+      DOCKER_USER: coder
+
+    # Run as you, so files you create are yours and not root's. The
+    # default 1000:1000 matches most single-user Linux boxes; override in
+    # .env if `id -u` says otherwise.
+    user: "${LONGHAND_UID:-1000}:${LONGHAND_GID:-1000}"
+
+    volumes:
+      # What you're writing. ONLY this. Do not mount the whole home
+      # directory "for convenience" — the blast radius of a browser tab
+      # is the reason this line is narrow.
+      - ${WRITING_DIR:-./workspace}:/home/coder/writing
+
+      # The writing environment itself: theme, serif font, 80-column
+      # wrap, no line numbers, no autocomplete. Read config/settings.json
+      # — it is the whole "distraction-free editor" feature.
+      - ./config/settings.json:/home/coder/.local/share/code-server/User/settings.json:ro
+
+      # Extensions and editor state survive a restart.
+      - longhand_data:/home/coder/.local/share/code-server
+
+    mem_limit: ${LONGHAND_MEM:-1024m}
+
+volumes:
+  longhand_data:

@@ -1,0 +1,107 @@
+{
+  // ===========================================================
+  // Longhand — the writing environment.
+  //
+  // This file IS the "distraction-free editor" feature. It turns VS Code
+  // from a developer tool into a writing desk. Derived from Michael
+  // Webb's setup (Jisc NCAI, 2026-08-07), which he arrived at by asking
+  // Claude to solve exactly this problem.
+  //
+  // Fonts are global, not per-language — VS Code has no per-language
+  // font setting. That's fine here: this workspace is for writing, so
+  // the serif is the right default for everything in it.
+  // ===========================================================
+
+  // --- calm, not stark -------------------------------------------------
+  "workbench.colorTheme": "Quiet Light",
+
+  // --- reads like a book page, not a terminal --------------------------
+  // Iowan Old Style first (macOS), then broadly-available serifs. If none
+  // are installed you fall back to the system serif and it still reads well.
+  "editor.fontFamily": "'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Noto Serif', serif",
+  "editor.fontSize": 17,
+  "editor.lineHeight": 1.7,
+  "editor.fontLigatures": false,
+
+  // --- a narrow column, like a page ------------------------------------
+  "editor.wordWrap": "wrapColumn",
+  "editor.wordWrapColumn": 80,
+  "editor.rulers": [],
+
+  // --- remove the code furniture ---------------------------------------
+  "editor.lineNumbers": "off",
+  "editor.minimap.enabled": false,
+  "editor.glyphMargin": false,
+  "editor.folding": false,
+  "editor.renderLineHighlight": "none",
+  "editor.occurrencesHighlight": "off",
+  "editor.selectionHighlight": false,
+  "editor.matchBrackets": "never",
+  "breadcrumbs.enabled": false,
+  "workbench.activityBar.location": "hidden",
+  "workbench.statusBar.visible": true,
+  "workbench.editor.showTabs": "single",
+
+  // --- nothing pops up mid-sentence ------------------------------------
+  "editor.quickSuggestions": {
+    "other": false,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggestOnTriggerCharacters": false,
+  "editor.acceptSuggestionOnEnter": "off",
+  "editor.parameterHints.enabled": false,
+  "editor.hover.enabled": false,
+  "editor.inlineSuggest.enabled": false,
+
+  // --- Webb's one sharp edge, fixed ------------------------------------
+  // He has to remember to save before asking the assistant to do
+  // anything, and says it's "awkward and easily forgotten". Save on a
+  // 500ms pause and on focus change, and the problem stops existing.
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 500,
+
+  // --- spelling ---------------------------------------------------------
+  // Needs the Code Spell Checker extension (streetsidesoftware.code-spell-checker).
+  // Install once; it persists in the longhand_data volume.
+  "cSpell.language": "en-GB",
+  "cSpell.words": [
+    "Anthropic",
+    "Apertus",
+    "Banco",
+    "Caddy",
+    "Freehold",
+    "Jisc",
+    "Keycloak",
+    "Longhand",
+    "MinIO",
+    "Treuhänder",
+    "Wolfhold",
+    "agentic",
+    "rclone"
+  ],
+
+  // --- markdown-specific ------------------------------------------------
+  "[markdown]": {
+    "editor.quickSuggestions": {
+      "other": false,
+      "comments": false,
+      "strings": false
+    },
+    "editor.wordWrap": "wrapColumn",
+    "editor.tabSize": 2
+  },
+  "markdown.preview.fontSize": 17,
+  "markdown.preview.lineHeight": 1.7,
+
+  // --- keep the sidebar honest -----------------------------------------
+  // Longhand's folder convention puts sources/, research/ and
+  // references.md next to the chapters. They should be THERE but not in
+  // your face — you're only ever editing the chapter.
+  "explorer.compactFolders": false,
+  "explorer.sortOrder": "type",
+
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "none",
+  "workbench.startupEditor": "none"
+}

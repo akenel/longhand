@@ -1,0 +1,83 @@
+# =============================================================
+# Longhand — PROD overlay. Read this before you run it.
+#
+# ⚠️  code-server is a text editor WITH A TERMINAL IN IT. Putting it on
+#     the box means: whoever gets through the login has a shell on the
+#     box, as the container's user, with whatever is mounted. That is a
+#     bigger decision than "add a subdomain", and it is why the local
+#     file binds to 127.0.0.1 and this one is opt-in.
+#
+#     Before running this, do all four:
+#       1. A DEDICATED Keycloak client (longhand) — not a shared one.
+#       2. Restrict it to a group. `writers`, one member, you.
+#       3. Mount ONLY the writing folder. Never the repo root, never $HOME.
+#       4. Read docs/private/HARDENING.md and mean it.
+#
+# Follows the iw/wk pattern: this is its own compose project that JOINS
+# the freehold network, so Caddy resolves it by name. Freehold neither
+# builds nor deploys it — it only routes.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Then add the Caddy block from config/caddy-snippet.txt to
+# freehold/Caddyfile.prod and reload Caddy.
+#
+# Needs in .env: LONGHAND_DOMAIN, LONGHAND_CLIENT_SECRET,
+#                OAUTH2_PROXY_COOKIE_SECRET, AUTH_DOMAIN
+# =============================================================
+
+services:
+  code-server:
+    # No published ports in prod. The ONLY way in is through
+    # oauth2-proxy, which is the only thing Caddy can reach. Overriding
+    # with [] drops the loopback bind from the base file.
+    ports: []
+    networks: [freehold]
+
+  # Keycloak's doorman. code-server has no OIDC of its own — it offers a
+  # shared password, which is not a login, it's a secret everyone knows.
+  # oauth2-proxy sits in front and refuses anything without a valid token.
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
+    restart: unless-stopped
+    depends_on: [code-server]
+    networks: [freehold]
+    mem_limit: 128m
+    environment:
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://${AUTH_DOMAIN}/realms/kc-prd
+      OAUTH2_PROXY_CLIENT_ID: longhand
+      OAUTH2_PROXY_CLIENT_SECRET: ${LONGHAND_CLIENT_SECRET}
+      # 32 bytes, base64. Generate: openssl rand -base64 32
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_UPSTREAMS: http://code-server:8080
+      OAUTH2_PROXY_REDIRECT_URL: https://${LONGHAND_DOMAIN}/oauth2/callback
+
+      # Trust Caddy's headers, and only Caddy's — this container is not
+      # reachable from outside the freehold network.
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SAMESITE: lax
+
+      # code-server is a websocket app. Without this the editor connects
+      # and then dies silently, which looks like a broken editor rather
+      # than an auth setting.
+      OAUTH2_PROXY_PASS_AUTHORIZATION_HEADER: "true"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+
+      # ⚠️  THE LINE THAT MATTERS. Without a group restriction, EVERY user
+      #     in kc-prd gets a shell on the box. With it, only members of
+      #     /writers do. Set the group up in Keycloak first and add a
+      #     "groups" mapper to the longhand client, or this silently
+      #     allows nobody (fail closed — which is the right way to fail).
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${LONGHAND_ALLOWED_GROUPS:-/writers}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+
+networks:
+  # Joins the network Freehold already runs, the same way iw and wk do.
+  # Check the real name with: docker network ls | grep freehold
+  freehold:
+    external: true
+    name: ${FREEHOLD_NETWORK:-freehold_freehold}

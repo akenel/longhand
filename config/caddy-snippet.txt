@@ -1,0 +1,40 @@
+Add this block to freehold/Caddyfile.prod, next to the @ai (Open WebUI) block.
+
+It routes to oauth2-proxy, NOT to code-server. code-server must never be
+reachable directly — the proxy is the login.
+
+------------------------------------------------------------------------
+
+	# Longhand — write.<domain>
+	@longhand host {$LONGHAND_DOMAIN:write.disabled.invalid}
+	handle @longhand {
+		reverse_proxy oauth2-proxy:4180
+	}
+
+------------------------------------------------------------------------
+
+And in freehold's docker-compose overlay for this box, teach Caddy the
+hostname the same way Open WebUI does:
+
+	caddy:
+	  environment:
+	    LONGHAND_DOMAIN: ${LONGHAND_DOMAIN:-http://localhost:2025}
+
+WHY THE WEIRD DEFAULT, AND WHY NOT "":
+
+  A set-but-empty {$VAR} is an EMPTY KEY to Caddy. That produces
+  "server block without any key must be first", the whole config fails
+  to parse, and Caddy crash-loops. Everything behind it goes dark.
+
+  This happened on 2026-07-06 and took prod down during the Open WebUI
+  rollout. Compose was passing "" via ${VAR:-}, which defeats the
+  Caddyfile's own {$VAR:default}.
+
+  So: default to something INERT in both places. Unset must resolve to
+  harmless, never to empty.
+
+  Written up in freehold/docs/human-green/0001-the-empty-domain.md.
+
+NO NEW CERTIFICATE IS NEEDED. The wildcard *.wolfhold.app cert already
+exists via Porkbun DNS-01 (freehold commit 209e304), so a new subdomain
+costs nothing but this block.
