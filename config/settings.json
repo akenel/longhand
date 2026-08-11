@@ -18,13 +18,22 @@
   // the wrong one: it magnifies pixels without re-laying out, so the
   // explorer filenames start overlapping (seen at 150% on 2026-08-11).
   //
-  // Each step is about 1.2x:  1 = 120%   2 = 144%   3 = 173%
-  // Fractions work: 2.5 = 158%.
+  // Each step is 1.2x, and fractions work:
+  //   1 = 120%   2 = 144%   2.2 = 149%   2.5 = 158%   3 = 173%
   //
-  // 2 is the default because "big enough not to squint" beats "fits more
-  // on screen" for a tool you write in for hours. Nudge it live with
-  // Ctrl+= / Ctrl+- — it saves and survives a restart.
-  "window.zoomLevel": 2,
+  // 2.2 is the default because it's ~150%, which is what a real writer
+  // asked for after an hour in it: "at 100 the screen is perfect but I
+  // need 150." Big enough not to squint beats fitting more on screen,
+  // for a tool you write in for hours.
+  //
+  // ⚠️  KEEP THE BROWSER AT 100% (Ctrl+0). Browser zoom on top of this
+  //     double-scales AND breaks the layout — it magnifies pixels
+  //     without re-flowing, so explorer filenames start overlapping.
+  //     This setting re-flows. That's the whole difference.
+  //
+  // Change it live with Ctrl+= / Ctrl+-, or edit the number in
+  // ./data/User/settings.json. Both persist.
+  "window.zoomLevel": 2.2,
 
   // --- calm, not stark -------------------------------------------------
   "workbench.colorTheme": "Quiet Light",
@@ -120,6 +129,9 @@
   "workbench.tree.indent": 14,
   "workbench.list.smoothScrolling": true,
   "explorer.decorations.badges": false,
+
+  // Long filenames scroll sideways instead of being cut off mid-word.
+  "workbench.list.horizontalScrolling": true,
 
   // The terminal and search boxes ignore editor.fontSize and default to
   // something small. window.zoomLevel scales them, but they start from a
